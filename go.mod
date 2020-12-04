@@ -1,6 +1,6 @@
 module myruleengine
 
-go 1.14
+go 1.13
 
 require (
 	github.com/astaxie/beego v1.12.3
@@ -11,6 +11,5 @@ require (
 	github.com/prometheus/common v0.15.0
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/prometheus/tsdb v0.10.0 // indirect
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
 )

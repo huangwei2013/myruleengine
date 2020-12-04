@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/rules"
+	"github.com/prometheus/prometheus/util/strutil"
 )
 
 // Manager ...
@@ -34,6 +35,21 @@ type Manager struct {
 
 	logger log.Logger
 }
+
+type NotifyAlert struct {
+	// Label value pairs for purpose of aggregation, matching, and disposition
+	// dispatching. This must minimally include an "alertname" label.
+	Labels labels.Labels `json:"labels"`
+
+	// Extra key/value information which does not define alert identity.
+	Annotations labels.Labels `json:"annotations"`
+
+	// The known time range for this alert. Both ends are optional.
+	StartsAt     time.Time `json:"startsAt,omitempty"`
+	EndsAt       time.Time `json:"endsAt,omitempty"`
+	GeneratorURL string    `json:"generatorURL,omitempty"`
+}
+
 
 // NewManager ...
 func NewManager(ctx context.Context, logger log.Logger,
@@ -55,6 +71,7 @@ func NewManager(ctx context.Context, logger log.Logger,
 			config.AuthToken,
 			fmt.Sprintf("%s%s", config.GatewayURL, config.GatewayPathNotify),
 			config.NotifyReties,
+			source.Url,
 		),
 		Context:         ctx,
 		ExternalURL:     &url.URL{},
@@ -148,15 +165,26 @@ func (a *Alert) MarshalJSON() ([]byte, error) {
 }
 
 // HTTPNotifyFunc
-func HTTPNotifyFunc(logger log.Logger, token string, url string, retries int) rules.NotifyFunc {
+func HTTPNotifyFunc(logger log.Logger, token string, url string, retries int, sourceUrl string) rules.NotifyFunc {
 	return func(ctx context.Context, expr string, alerts ...*rules.Alert) {
 		if len(alerts) == 0 {
 			return
 		}
 
-		new := []*Alert{}
-		for _, i := range alerts {
-			new = append(new, (*Alert)(i))
+		var new []*NotifyAlert
+		for _, alert := range alerts {
+			a := &NotifyAlert{
+				StartsAt:     alert.FiredAt,
+				Labels:       alert.Labels,
+				Annotations:  alert.Annotations,
+				GeneratorURL: sourceUrl + strutil.TableLinkForExpression(expr),
+			}
+			if !alert.ResolvedAt.IsZero() {
+				a.EndsAt = alert.ResolvedAt
+			} else {
+				a.EndsAt = alert.ValidUntil
+			}
+			new = append(new, a)
 		}
 
 		data, err := json.Marshal(new)
