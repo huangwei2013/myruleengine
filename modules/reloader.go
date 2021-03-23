@@ -87,7 +87,12 @@ func (r *Reloader) Update() error {
 		if del {
 			level.Info(r.logger).Log("msg", "source not exist, delete manager", "source_id", m.Source.Id, "source_url", m.Source.Url)
 			m.Stop()
-			r.managers = append(r.managers[:idx], r.managers[idx+1:]...)
+            
+            if idx+1 <= len(r.managers) {
+                r.managers = append(r.managers[:idx], r.managers[idx+1:]...)
+            } else {
+                r.managers = r.managers[:idx]
+            }
 		}
 	}
 
