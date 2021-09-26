@@ -12,7 +12,4 @@
 NOTE：
     向 AlertManager 发送的 alert 消息，暂时还是 doraemon 协议格式的，应该需要少量改造
 
-## 其他
-有两个辅助项目：
-* [mysql4Prom](https://github.com/huangwei2013/mysql4prom)：用于解析 prometheus 规则文件，并导入DB
-* [mysql4PromUI](https://github.com/huangwei2013/mysql4promUI)：用于 DB 对应的简单管理界面
+
